@@ -12,34 +12,31 @@
    Flask was chosen for its minimalist design and fine-grained control over routing, templating, and session handling. Its modular nature allows rapid development of data-driven web applications while maintaining a clean separation between presentation and logic.
 
 * **MongoDB:**  
-   A NoSQL database was used to store and query heterogeneous wine data. MongoDB’s document structure enables storage of unstructured attributes (e.g., variable tasting notes) and provides native **geospatial** and **text search** capabilities that are important to this project.
+   A schema-flexible NoSQL database was used to store and query heterogeneous wine data. MongoDB’s document structure enables storage of unstructured attributes (e.g., variable tasting notes) and provides native **geospatial** and **text search** capabilities critical to this project.
 
 * **PyMongo and GridFS:**  
-   The `pymongo` library provided efficient communication with the MongoDB instance. `GridFS` was utilized to store and retrieve image data (country flags) directly within the database, maintaining portability and eliminating file-system dependencies.
+   The `pymongo` library provided efficient communication with the MongoDB instance. `GridFS` was utilized to store and retrieve image data (such as country flags) directly within the database, maintaining portability and eliminating file-system dependencies.
 
 ### **Frontend**
 
-* **HTML5:**  
-   The interface was built from scratch using HTML, prioritizing readability and simpleness. The dark theme integration satisfies both accessibility and aesthetic requirements.
-
+* **HTML5 (Custom UI Design):**  
+   The interface was built from scratch using HTML, prioritizing readability and responsiveness. The dark/light theme integration satisfies both accessibility and aesthetic usability requirements.
 
 ### **Rationale for Stack Selection**
 
-The chosen architecture balances **simplicity**, **scalability**, and **expressiveness**:
+The chosen architecture balances **simplicity** and **scalability**:
 
-1. Flask’s micro-framework approach enables rapid iteration.
+1. Flask’s framework approach enables rapid iteration.
 
 2. MongoDB supports both **textual** and **geospatial** indexing in a single system.
 
 3. GridFS centralizes all project assets (text, data, and images) within one coherent datastore.
 
-4. The stack transitions naturally to a cloud-ready or containerized environment without refactoring.
-
 ---
 
 ## **2\. Process**
 
-The dataset was collected from kaggle containing 130,000 documents and then was filtered down to 119,788 documents after removing the N/A values as well as strings that have little meaning. Loaded data into the database, joined country flag image as well as the lat/lon coordinates. 
+The dataset was preprocessed and augmented through a multi-stage pipeline involving data cleaning, geolocation enrichment, normalization, and database ingestion. This ensured each document contained both textual metadata and accurate geographic coordinates for spatial querying.
 
 ### **Step 1 — Source Data and Initial Cleaning**
 
@@ -58,14 +55,10 @@ Because the dataset lacked latitude and longitude coordinates, a custom **geocod
 
 #### **Key Design Features**
 
-* **Hierarchical Query Resolution:**  
-   Each unique location was geocoded at three levels of specificity:
+* **Query Resolution:**  
+   Each unique location was geocoded at the level of specificity shown below:
 
-  1. `(region_1, province, country)`
-
-  2. `(province, country)`
-
-  3. `(country)`
+  1. `(province, country)`
 
 * **Rate Limiting and Backoff:**  
    To comply with Nominatim’s usage policy, a delay of 1.6 s per request was imposed and exponential backoff used for transient 503 errors.
@@ -81,10 +74,7 @@ Example snippet:
 `geo = Nominatim(user_agent="wine-geocoder (keerthanpanyala7@gmail.com)")`  
 `geocode = RateLimiter(geo.geocode, min_delay_seconds=1.6, swallow_exceptions=True)`
 
-`location = geocode("Mendoza, Argentina")`
-
-If an entry failed at the region level, the system automatically retried at province, then country level.
-
+`location = geocode("Mendoza, Argentina")`  
 ---
 
 ### **Step 3 — Secondary Verification**
@@ -165,7 +155,7 @@ The collection size was verified post-import:
 
 `db.wines.countDocuments()`
 
-**Result:** `119,788 documents` in the `wines` collection.
+**Result:** `119788 documents` in the `wines` collection.
 
 This scale enabled realistic testing of MongoDB’s geospatial and text indexing while maintaining responsive Flask performance.
 
@@ -175,36 +165,72 @@ This scale enabled realistic testing of MongoDB’s geospatial and text indexing
 
 The dataset supports rich semantic and geographic variety. The following search terms highlight this diversity:
 
+| Search Query | Observation |
+| ----- | ----- |
+| `"Pinot Noir"` | Demonstrates varietal diversity across Oregon and Burgundy regions. |
+| `"honey"` | Captures dessert-wine descriptions via full-text search. |
+| `"Riesling"` | Combines text and geospatial filters to isolate wines in Germany’s Mosel Valley. |
+| `"Mendoza"` (lat −32.89, lon −68.83, radius 100 km) | Spatial query isolates Argentinian Malbec producers. |
+| `"Chardonnay" AND "California"` | Compound query combining textual and location constraints. |
 
+**User Interaction Example:**  
+ A search for *“Pinot Noir” near latitude 45.52, longitude −122.67* returns Oregon wineries. Selecting a record opens a detailed page showing a country flag (served via GridFS) and user-added comments stored directly within the document.
 
 ---
+
+### 
+
+### 
+
+### **Interesting Search Terms & Behaviors**
+
+The application supports both **text-based** and **geo-based** search. The following search terms yield particularly notable results:
+
+**Oregon Pinot cluster**
+
+Field: Variety → Query: Pinot Noir
+
+Country: US · Province: Oregon
+
+Geospatial Mode: Center on Country/Province · Radius: 120 km
+
+Finds Oregon Pinot Noir clusters
+
+**Riesling around the Great Lakes**
+
+Field: Variety → Riesling
+
+Country: US · Province: Michigan
+
+Mode: Center on Country/Province · Radius: 150 km
+
+Finds Lake Michigan Shore / Old Mission Peninsula bottlings.
 
 ## **5\. Bells and Whistles**
 
 ### **Highlights**
 
 1. **Integrated Geospatial \+ Text Search:**  
-    The application unifies `$text` and `$geoWithin` queries, allowing multi-dimensional filtering by both semantic and spatial criteria.
+    The application combines `$text` and `$geoWithin` queries, allowing multi-dimensional filtering by both semantic and spatial criteria.
 
 2. **Dynamic and Aesthetic UI:**  
-    Custom CSS styling introduces light/dark mode contrast, animated transitions, and a focus on readability.
+    Custom styling introduces light/dark mode contrast, animated transitions, and a focus on readability.
 
 3. **GridFS Media Integration:**  
-    Country flags are stored and streamed directly from MongoDB, ensuring full portability.
+    Country flags are stored and retrieved directly from MongoDB.
 
 4. **Persistent Commenting System:**  
     User comments are appended to the relevant wine document as an embedded array with timestamps.
 
 5. **Performance Optimization:**  
-    Compound indices on `country`, `variety`, and `location` improve query speed and scalability.
+    Indices on `country`, `variety`, `location and description` improve query speed and scalability.
 
 ### **What We Are Most Proud Of**
 
-* The **harmonization of geospatial intelligence and text analytics** in a single, user-friendly web interface.
+* The **combination of geospatial and text search** in a single, user-friendly web interface.
 
-* A **modular codebase** emphasizing clarity and extensibility.
-
-* The **research-grade data preparation pipeline**, which geocoded tens of thousands of records using open data principles while adhering to ethical rate-limit standards.
+* The **data preparation pipeline**, which geocoded tens of thousands of records using open data principles while adhering to ethical rate-limit standards.  
+* The **ease of use** and **fast retrieval** of documents while using the application
 
 ---
 
@@ -217,5 +243,5 @@ The dataset supports rich semantic and geographic variety. The following search 
 
 Ensure MongoDB is running locally and contains the geocoded dataset.
 
-Navigate to [http://localhost:3000](http://localhost:3000) in your browser to access the search interface.
+Navigate to [https://mongo-maniacs.webdev.gccis.rit.edu/](https://mongo-maniacs.webdev.gccis.rit.edu/) in your browser to access the search interface.
 
