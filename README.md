@@ -167,7 +167,7 @@ The collection size was verified post-import:
 
 `db.wines.countDocuments()`
 
-**Result:** `49 075 documents` in the `wines` collection.
+**Result:** `119,788 documents` in the `wines` collection.
 
 This scale enabled realistic testing of MongoDB’s geospatial and text indexing while maintaining responsive Flask performance.
 
@@ -177,16 +177,7 @@ This scale enabled realistic testing of MongoDB’s geospatial and text indexing
 
 The dataset supports rich semantic and geographic variety. The following search terms highlight this diversity:
 
-| Search Query | Observation |
-| ----- | ----- |
-| `"Pinot Noir"` | Demonstrates varietal diversity across Oregon and Burgundy regions. |
-| `"honey"` | Captures dessert-wine descriptions via full-text search. |
-| `"Riesling"` | Combines text and geospatial filters to isolate wines in Germany’s Mosel Valley. |
-| `"Mendoza"` (lat −32.89, lon −68.83, radius 100 km) | Spatial query isolates Argentinian Malbec producers. |
-| `"Chardonnay" AND "California"` | Compound query combining textual and location constraints. |
 
-**User Interaction Example:**  
- A search for *“Pinot Noir” near latitude 45.52, longitude −122.67* returns Oregon wineries. Selecting a record opens a detailed page showing a country flag (served via GridFS) and user-added comments stored directly within the document.
 
 ---
 
