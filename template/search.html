@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wine Search</title>
+  <style>
+    /* --- Styles (same as previous version) --- */
+    :root{
+      --bg:#0f0f14; --panel:#14151d; --panel-2:#1b1d28; --border:#242739; --muted:#a8adbd;
+      --text:#e9ecf4; --brand:#e9426d; --brand-2:#fb7b4e; --chip:#2a2e43; --good:#00c389; --info:#5bb2ff;
+    }
+    *{box-sizing:border-box} html,body{min-height:100%}
+    body{ margin:0; background:linear-gradient(180deg,#0E1117 0%, #121423 35%, #0f1018 100%); color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
+    .header{ background:linear-gradient(100deg,var(--brand),var(--brand-2)); padding:36px 18px; color:white; }
+    .header .inner{max-width:1080px; margin:0 auto; display:flex; align-items:center; gap:16px;}
+    .logo{ width:46px; height:46px; border-radius:12px; background:rgba(255,255,255,.2); display:grid; place-items:center; font-weight:800; letter-spacing:.5px; box-shadow:0 10px 20px rgba(0,0,0,.25); }
+    .title{margin:0; font-size:1.9rem; letter-spacing:.4px} .subtitle{margin:4px 0 0; opacity:.9}
+    .container{max-width:1080px; margin:20px auto; padding:0 18px 36px;}
+    .card{ background:linear-gradient(180deg,var(--panel) 0%, var(--panel-2) 100%); border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow:0 10px 40px rgba(0,0,0,.25); margin-bottom:18px; }
+    h2,h3{margin:6px 0 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px;}
+    label{font-weight:600; display:block; margin:6px 0 8px}
+    select,input[type="text"]{ width:100%; background:#0e0f16; color:var(--text); border:1px solid var(--border); border-radius:12px; padding:12px 12px; outline:none; box-shadow:inset 0 1px 0 rgba(255,255,255,.02); font-size: 0.95rem; }
+    input[type="checkbox"] { width: auto; margin-right: 5px; vertical-align: middle; accent-color: var(--brand); transform: scale(1.1); }
+    .grid{display:grid; gap:14px} .g-2{grid-template-columns:1fr 1fr} .g-3{grid-template-columns:1fr 1fr 1fr}
+    .hint{color:var(--muted); font-size:.9rem; margin-top: 4px;}
+    .actions{display:flex; gap:10px; align-items:center; margin-top:18px;}
+    .btn{ background:linear-gradient(90deg,var(--brand),var(--brand-2)); color:white; border:none; border-radius:12px; padding:12px 18px; font-weight:800; cursor:pointer; transition:filter .15s ease; letter-spacing:.2px; font-size: 1rem;}
+    .btn:hover{filter:brightness(1.05)}
+    .btn-secondary{ background:transparent; border:1px solid var(--border); color:var(--text); }
+    /* Results */
+    .results-list{list-style:none; padding:0; margin-top: 15px;}
+    .result{ display:grid; grid-template-columns:100px 1fr; gap:16px; border:1px solid var(--border); border-radius:16px; padding:14px 14px; background:#0f111a; transition:background .15s ease, border-color .15s ease; margin-bottom:12px; }
+    .result:hover{background:#111423; border-color:#2e3350}
+    .thumb{ width:100px; height:66px; border-radius:10px; overflow:hidden; border:1px solid #2b2f49; background:#0a0c12; }
+    .thumb img{width:100%; height:100%; object-fit:cover}
+    .title-link{color:#fff; text-decoration:none; font-weight:800; font-size:1.02rem}
+    .meta{color:var(--muted); margin-top:4px; font-size: 0.85rem;}
+    .chips{display:flex; gap:8px; flex-wrap:wrap; margin-top:6px}
+    .chip{ background:var(--chip); border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-size:.8rem; }
+    .badge{background:#08321e; border:1px solid #0f5c3f; color:#9affdd}
+    .badge-info{background:#0a243f; border:1px solid #174c80; color:#aad6ff}
+    .empty{color:var(--muted); padding:10px 2px}
+    /* Geo Search + Stats Grid */
+    .geo-stats-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-top: 18px; }
+    .geo-section {} .stats-section {}
+    /* Stats Card Styles */
+    .stats-card { background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 15px; text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+    .stats-card h3 { margin-top: 0; border-bottom: none; }
+    .stats-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px; }
+    .stat-item { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px; }
+    .stat-value { font-size: 1.3rem; font-weight: bold; color: var(--brand-2); }
+    .stat-label { font-size: 0.85rem; color: var(--muted); margin-top: 3px; }
+    /* Results Header */
+    .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .results-header h2 { margin: 0; padding: 0; border: none; }
+    .sort-control select { width: auto; padding: 8px 10px; font-size: 0.9rem; border-radius: 8px; background: var(--panel); color: var(--text); border-color: var(--border);}
+    /* Responsive */
+    @media (max-width: 900px) { .g-2,.g-3{grid-template-columns:1fr} .geo-stats-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) { .results-header { flex-direction: column; align-items: flex-start; gap: 10px;} .sort-control { width: 100%; } .sort-control select { width: 100%; } }
+  </style>
+</head>
+<body>
+
+
+  <header class="header">
+    <div class="inner">
+      <div class="logo">WC</div>
+      <div>
+        <h1 class="title">Wine Cellar</h1>
+        <p class="subtitle">Search by text, filter by place, and refine by geospatial area.</p>
+      </div>
+    </div>
+  </header>
+
+
+  <main class="container">
+
+
+    <form class="card" action="{{ url_for('search') }}" method="GET" id="search-form"> <!-- Added ID -->
+      <h2>Find Wines</h2>
+      <!-- Text search -->
+      <div class="grid g-3">
+        <div>
+          <label for="q">Query</label>
+          <input id="q" name="q" type="text" value="{{ q }}" placeholder='e.g. "pinot", "honey", "ripe"'>
+          <div class="hint">Case-insensitive</div>
+        </div>
+        <div>
+          <label for="field">Field</label>
+          <select id="field" name="field">
+            <option value="all"         {% if field=='all' %}selected{% endif %}>All (title, description, variety, winery)</option>
+            <option value="title"       {% if field=='title' %}selected{% endif %}>Title</option>
+            <option value="description" {% if field=='description' %}selected{% endif %}>Description</option>
+            <option value="variety"     {% if field=='variety' %}selected{% endif %}>Variety</option>
+            <option value="winery"      {% if field=='winery' %}selected{% endif %}>Winery</option>
+          </select>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <label style="display:flex; gap:8px; align-items:center; margin-top: 8px;">
+            <input type="checkbox" name="text" value="1" {% if use_text %}checked{% endif %}>
+            Match Entire Word
+          </label>
+        </div>
+      </div>
+
+
+      <!-- Facets -->
+      <h3 style="margin-top:18px;">Place Filters</h3>
+      <div class="grid g-2">
+        <div>
+          <label for="country">Country</label>
+          <select id="country" name="country">
+            <option value="">Any</option>
+            {% for c in countries %}
+              <option value="{{ c }}" {% if country==c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="province">Province</label>
+          <select id="province" name="province">
+            <option value="">Any</option>
+            {% for p in provinces %}
+              <option value="{{ p }}" {% if province==p %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+          </select>
+          <div class="hint">List updates when country selected.</div>
+        </div>
+      </div>
+
+
+      <!-- Wrapper Grid for Geo and Stats -->
+      <div class="geo-stats-grid">
+
+
+        <!-- Geo Section -->
+        <div class="geo-section">
+          <h3 style="margin-top:18px;">Geospatial Search</h3>
+          <div class="grid g-2">
+            <div>
+              <label for="geo_mode">Mode</label>
+              <select id="geo_mode" name="geo_mode">
+                <option value="by_area"   {% if geo_mode=='by_area' %}selected{% endif %}>Center on Country/Province</option>
+                <option value="by_coords" {% if geo_mode=='by_coords' %}selected{% endif %}>Manual coordinates</option>
+                <option value="none"      {% if geo_mode=='none' %}selected{% endif %}>No geo filter</option>
+              </select>
+            </div>
+            <div>
+              <label for="radius">Radius (km)</label>
+              <input id="radius" name="radius" type="text" value="{{ radius or '50' }}" placeholder="50">
+            </div>
+          </div>
+
+
+          <div id="coords" class="grid g-2" style="margin-top:10px;">
+            <div>
+              <label for="lat">Latitude (manual)</label>
+              <input id="lat" name="lat" type="text" value="{{ lat }}" placeholder="e.g., 43.15">
+            </div>
+            <div>
+              <label for="lon">Longitude (manual)</label>
+              <input id="lon" name="lon" type="text" value="{{ lon }}" placeholder="e.g., -77.61">
+            </div>
+          </div>
+        </div><!-- end .geo-section -->
+
+
+        <!-- Stats Section -->
+        <div class="stats-section">
+          {% if country and stats %}
+          <div class="stats-card">
+              <h3>Stats for {{ country }}</h3>
+              <div class="stats-grid">
+                  <div class="stat-item">
+                      <div class="stat-value">
+                          {% if stats.avgPrice is not none %}
+                              ${{ "%.2f"|format(stats.avgPrice) }}
+                          {% else %} N/A {% endif %}
+                      </div>
+                      <div class="stat-label">Average Price</div>
+                  </div>
+                  <div class="stat-item">
+                      <div class="stat-value">
+                          {% if stats.avgPoints is not none %}
+                              {{ "%.1f"|format(stats.avgPoints) }}
+                          {% else %} N/A {% endif %}
+                      </div>
+                      <div class="stat-label">Average Points</div>
+                  </div>
+                  <div class="stat-item">
+                      <div class="stat-value">
+                          {{ stats.topVariety or 'N/A' }}
+                      </div>
+                      <div class="stat-label">Most Common Variety</div>
+                  </div>
+              </div>
+          </div>
+          {% else %}
+             <!-- Placeholder -->
+             <div class="stats-card" style="opacity: 0.5;">
+                 <h3>Country Stats</h3>
+                 <p class="hint" style="margin: auto;">Select a country to see stats.</p>
+             </div>
+          {% endif %}
+        </div><!-- end .stats-section -->
+
+
+      </div><!-- end .geo-stats-grid -->
+
+
+      <div class="actions">
+        <button class="btn" type="submit">Search</button>
+        <a class="btn btn-secondary" href="{{ url_for('index') }}">Clear Filters</a>
+        <span class="hint" style="margin-left: auto;">Showing up to 50 results.</span>
+      </div>
+    </form> <!-- End of main search form -->
+
+
+    <!-- Results -->
+    <section class="card">
+      <div class="results-header">
+          <h2>Results ({{ total }})</h2>
+          <div class="sort-control">
+              <label for="sort_by" style="display: inline-block; margin-right: 5px; margin-bottom: 0;">Sort by:</label>
+              <select id="sort_by" name="sort_by" form="search-form">
+                  <!-- Relevance Option Removed -->
+                  <option value="points_desc" {% if sort_by=='points_desc' %}selected{% endif %}>Points (High to Low)</option>
+                  <option value="points_asc" {% if sort_by=='points_asc' %}selected{% endif %}>Points (Low to High)</option>
+                  <option value="price_desc" {% if sort_by=='price_desc' %}selected{% endif %}>Price (High to Low)</option>
+                  <option value="price_asc" {% if sort_by=='price_asc' %}selected{% endif %}>Price (Low to High)</option>
+              </select>
+              <!-- JS to submit form on sort change -->
+              <script>document.getElementById('sort_by').addEventListener('change', function() { document.getElementById('search-form').submit(); });</script>
+          </div>
+      </div>
+
+
+      {% if not results %}
+        {% if q or country or province or (geo_mode!='none') %}
+          <p class="empty">No results matched your query.</p>
+        {% else %}
+          <p class="empty">Start with a query or choose a country to explore the cellar.</p>
+        {% endif %}
+      {% else %}
+        <ul class="results-list">
+          {% for wine in results %}
+            <li class="result">
+              <div class="thumb">
+                {% if wine.country_image %}
+                  <img src="{{ url_for('get_image', id=wine.country_image) }}" alt="{{ wine.country }} flag">
+                {% else %}
+                  <img src="{{ url_for('static', filename='default.png') }}" alt="No flag">
+                {% endif %}
+              </div>
+              <div>
+                <a class="title-link" href="{{ url_for('wine_details', id=wine._id) }}">{{ wine.title }}</a>
+                <div class="meta">
+                  {{ wine.country or '—' }} · {{ wine.province or '—' }} · {{ wine.variety or '—' }} · {{ wine.winery or '—' }}
+                </div>
+                <div class="chips">
+                  {% if wine.points %}<span class="chip badge">Points: {{ wine.points }}</span>{% endif %}
+                  {% if wine.price %}<span class="chip badge-info">Price: ${{ wine.price }}</span>{% endif %}
+                </div>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+  </main>
+
+
+  <script>
+    // --- JavaScript for Geo Mode Toggle and Dependent Province Dropdown ---
+    // (Unchanged)
+    const geoModeEl = document.getElementById('geo_mode');
+    const coordsEl = document.getElementById('coords');
+    function syncCoordsDisplay() {
+      coordsEl.style.display = geoModeEl.value === 'by_coords' ? 'grid' : 'none';
+    }
+    geoModeEl.addEventListener('change', syncCoordsDisplay);
+    syncCoordsDisplay();
+
+
+    const countryEl = document.getElementById('country');
+    const provinceEl = document.getElementById('province');
+    const initialProvinceValue = provinceEl.value;
+
+
+    async function updateProvinceDropdown(selectedCountry){
+      provinceEl.innerHTML = '<option value="">Any</option>';
+      if (!selectedCountry) { return; }
+
+
+      try {
+        const response = await fetch(`/provinces?country=${encodeURIComponent(selectedCountry)}`);
+        if (!response.ok) { throw new Error(`Fetch failed: ${response.statusText}`); }
+        const data = await response.json();
+
+
+        (data.provinces || []).forEach(provinceName => {
+          const option = document.createElement('option');
+          option.value = provinceName;
+          option.textContent = provinceName;
+          if (provinceName === initialProvinceValue) {
+            option.selected = true;
+          }
+          provinceEl.appendChild(option);
+        });
+      } catch(error) {
+        console.warn('Failed to fetch provinces:', error);
+      }
+    }
+    countryEl.addEventListener('change', () => updateProvinceDropdown(countryEl.value));
+
+
+    if (countryEl.value) {
+      updateProvinceDropdown(countryEl.value);
+    }
+  </script>
+</body>
+</html>
+
