@@ -12,18 +12,16 @@
    Flask was chosen for its minimalist design and fine-grained control over routing, templating, and session handling. Its modular nature allows rapid development of data-driven web applications while maintaining a clean separation between presentation and logic.
 
 * **MongoDB:**  
-   A schema-flexible NoSQL database was used to store and query heterogeneous wine data. MongoDB’s document structure enables storage of unstructured attributes (e.g., variable tasting notes) and provides native **geospatial** and **text search** capabilities critical to this project.
+   A NoSQL database was used to store and query heterogeneous wine data. MongoDB’s document structure enables storage of unstructured attributes (e.g., variable tasting notes) and provides native **geospatial** and **text search** capabilities that are important to this project.
 
 * **PyMongo and GridFS:**  
-   The `pymongo` library provided efficient communication with the MongoDB instance. `GridFS` was utilized to store and retrieve image data (such as country flags) directly within the database, maintaining portability and eliminating file-system dependencies.
+   The `pymongo` library provided efficient communication with the MongoDB instance. `GridFS` was utilized to store and retrieve image data (country flags) directly within the database, maintaining portability and eliminating file-system dependencies.
 
 ### **Frontend**
 
-* **HTML5 / CSS3 (Custom UI Design):**  
-   The interface was built from scratch using HTML and CSS, prioritizing readability and responsiveness. The dark/light theme integration satisfies both accessibility and aesthetic usability requirements.
+* **HTML5:**  
+   The interface was built from scratch using HTML, prioritizing readability and simpleness. The dark theme integration satisfies both accessibility and aesthetic requirements.
 
-* **Jinja2 Templates:**  
-   Dynamic data rendering between Flask routes and HTML pages was achieved using Jinja2 templating. This allowed context-sensitive page generation for search results, detailed wine views, and comment submissions.
 
 ### **Rationale for Stack Selection**
 
@@ -41,7 +39,7 @@ The chosen architecture balances **simplicity**, **scalability**, and **expressi
 
 ## **2\. Process**
 
-The dataset was preprocessed and enriched through a multi-stage pipeline involving data cleaning, geolocation enrichment, normalization, and database ingestion. This ensured each document contained both textual metadata and accurate geographic coordinates for spatial querying.
+The dataset was collected from kaggle containing 130,000 documents and then was filtered down to 119,788 documents after removing the N/A values as well as strings that have little meaning. Loaded data into the database, joined country flag image as well as the lat/lon coordinates. 
 
 ### **Step 1 — Source Data and Initial Cleaning**
 
