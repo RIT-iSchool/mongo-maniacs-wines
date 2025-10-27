@@ -145,7 +145,7 @@ Each record was augmented with a GeoJSON-compliant `location` field:
 ---
 
 **Outcome:**  
- After processing, **49 075 records** contained verified coordinates and clean metadata, forming the final dataset used for application deployment.
+ After processing, around **120,000 records** contained verified coordinates and clean metadata, forming the final dataset used for application deployment.
 
 ---
 
